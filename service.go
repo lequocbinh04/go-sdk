@@ -37,7 +37,7 @@ type service struct {
 	stopFunc     func()
 }
 
-func New(opts ...Option) (Service, *service) { // Service interface & raw service
+func New(opts ...Option) Service {
 	sv := &service{
 		opts:         opts,
 		signalChan:   make(chan os.Signal, 1),
@@ -75,7 +75,7 @@ func New(opts ...Option) (Service, *service) { // Service interface & raw servic
 
 	_ = loggerRunnable.Configure()
 
-	return sv, sv
+	return sv
 }
 
 func mergeServiceOpts(x []Option, y []Option) []Option {
