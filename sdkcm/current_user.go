@@ -1,14 +1,14 @@
 package sdkcm
 
 type Requester interface {
-	OAuth
+	//OAuth
 	User
 }
 
 type User interface {
 	UserID() uint32
 	GetSystemRole() string
-	GetUser() interface{}
+	//GetUser() interface{}
 }
 
 type OAuth interface {

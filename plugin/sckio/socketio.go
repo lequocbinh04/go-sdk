@@ -7,38 +7,9 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 	goservice "github.com/lequocbinh04/go-sdk"
 	"github.com/lequocbinh04/go-sdk/logger"
-	"github.com/lequocbinh04/go-sdk/sdkcm"
 	"log"
-	"net"
-	"net/http"
-	"net/url"
 	"sync"
 )
-
-type Socket interface {
-	ID() string
-	Close() error
-	URL() url.URL
-	LocalAddr() net.Addr
-	RemoteAddr() net.Addr
-	RemoteHeader() http.Header
-
-	Context() interface{}
-	SetContext(v interface{})
-	Namespace() string
-	Emit(msg string, v ...interface{})
-
-	Join(room string)
-	Leave(room string)
-	LeaveAll()
-	Rooms() []string
-}
-
-type AppSocket interface {
-	CurrentUser() sdkcm.Requester
-	SetCurrentUser(sdkcm.Requester)
-	Socket
-}
 
 type SocketServer interface {
 	UserSockets(userId int) []AppSocket
@@ -46,6 +17,7 @@ type SocketServer interface {
 	EmitToUser(userId int, key string, data interface{}) error
 	StartRealtimeServer(engine *gin.Engine, sc goservice.ServiceContext, op ObserverProvider)
 	GetSocketServer() *socketio.Server
+	SaveAppSocket(userId int, appSck AppSocket)
 }
 
 type Config struct {
@@ -110,6 +82,20 @@ func (s *sckServer) UserSockets(userId int) []AppSocket {
 func (s *sckServer) EmitToRoom(room string, key string, data interface{}) error {
 	s.io.BroadcastToRoom("/", room, key, data)
 	return nil
+}
+
+func (s *sckServer) SaveAppSocket(userId int, appSck AppSocket) {
+	s.locker.Lock()
+
+	//appSck.Join("order-{ordID}")
+
+	if v, ok := s.storage[userId]; ok {
+		s.storage[userId] = append(v, appSck)
+	} else {
+		s.storage[userId] = []AppSocket{appSck}
+	}
+
+	s.locker.Unlock()
 }
 
 func (s *sckServer) getAppSocket(userId int) []AppSocket {
