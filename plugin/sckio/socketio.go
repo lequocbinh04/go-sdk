@@ -3,35 +3,49 @@ package sckio
 import (
 	"flag"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
 	goservice "github.com/lequocbinh04/go-sdk"
 	"github.com/lequocbinh04/go-sdk/logger"
 	"github.com/lequocbinh04/go-sdk/sdkcm"
-	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
+	"sync"
 )
 
 type Socket interface {
-	Id() string
+	ID() string
+	Close() error
+	URL() url.URL
+	LocalAddr() net.Addr
+	RemoteAddr() net.Addr
+	RemoteHeader() http.Header
+
+	Context() interface{}
+	SetContext(v interface{})
+	Namespace() string
+	Emit(msg string, v ...interface{})
+
+	Join(room string)
+	Leave(room string)
+	LeaveAll()
 	Rooms() []string
-	Request() *http.Request
-	On(event string, f interface{}) error
-	Emit(event string, args ...interface{}) error
-	Join(room string) error
-	Leave(room string) error
-	Disconnect()
-	BroadcastTo(room, event string, args ...interface{}) error
 }
 
 type AppSocket interface {
-	ServiceContext() goservice.ServiceContext
-	Logger() logger.Logger
 	CurrentUser() sdkcm.Requester
 	SetCurrentUser(sdkcm.Requester)
-	BroadcastToRoom(room, event string, args ...interface{})
-	String() string
 	Socket
+}
+
+type SocketServer interface {
+	UserSockets(userId int) []AppSocket
+	EmitToRoom(room string, key string, data interface{}) error
+	EmitToUser(userId int, key string, data interface{}) error
+	StartRealtimeServer(engine *gin.Engine, sc goservice.ServiceContext, op ObserverProvider)
+	GetSocketServer() *socketio.Server
 }
 
 type Config struct {
@@ -41,33 +55,82 @@ type Config struct {
 
 type sckServer struct {
 	Config
-	io     *socketio.Server
-	logger logger.Logger
+	io      *socketio.Server
+	logger  logger.Logger
+	storage map[int][]AppSocket
+	locker  *sync.RWMutex
 }
 
 func New(name string) *sckServer {
 	return &sckServer{
-		Config: Config{Name: name},
+		Config:  Config{Name: name},
+		storage: make(map[int][]AppSocket),
+		locker:  new(sync.RWMutex),
 	}
 }
 
 type ObserverProvider interface {
-	AddObservers(server *socketio.Server, sc goservice.ServiceContext, l logger.Logger) func(socketio.Socket)
+	AddObservers(server *socketio.Server, sc goservice.ServiceContext, l logger.Logger) func(socketio.Conn) error
 }
 
 func (s *sckServer) StartRealtimeServer(engine *gin.Engine, sc goservice.ServiceContext, op ObserverProvider) {
-	server, err := socketio.NewServer([]string{"websocket"})
+	server, err := socketio.NewServer(nil)
+
 	if err != nil {
-		log.Fatal(err)
+		s.logger.Fatal(err)
 	}
 
-	server.SetMaxConnection(s.MaxConnection)
 	s.io = server
+	server.OnConnect("/", op.AddObservers(server, sc, s.logger))
 
-	_ = s.io.On("connection", op.AddObservers(server, sc, s.logger))
+	server.OnError("/", func(s socketio.Conn, e error) {
+		log.Println("meet error:", e)
+	})
 
-	engine.GET("/socket.io/", gin.WrapH(server))
-	engine.POST("/socket.io/", gin.WrapH(server))
+	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+		log.Println("closed", reason)
+	})
+
+	go server.Serve()
+
+	engine.GET("/socket.io/*any", gin.WrapH(server))
+	engine.POST("/socket.io/*any", gin.WrapH(server))
+}
+
+func (s *sckServer) UserSockets(userId int) []AppSocket {
+	var sockets []AppSocket
+
+	if scks, ok := s.storage[userId]; ok {
+		return scks
+	}
+
+	return sockets
+}
+
+func (s *sckServer) EmitToRoom(room string, key string, data interface{}) error {
+	s.io.BroadcastToRoom("/", room, key, data)
+	return nil
+}
+
+func (s *sckServer) getAppSocket(userId int) []AppSocket {
+	s.locker.RLock()
+	defer s.locker.RUnlock()
+
+	return s.storage[userId]
+}
+
+func (s *sckServer) EmitToUser(userId int, key string, data interface{}) error {
+	sockets := s.getAppSocket(userId)
+
+	for _, s := range sockets {
+		s.Emit(key, data)
+	}
+
+	return nil
+}
+
+func (s *sckServer) GetSocketServer() *socketio.Server {
+	return s.io
 }
 
 func (s *sckServer) GetPrefix() string {
