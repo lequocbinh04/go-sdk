@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/getsentry/sentry-go"
-	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/lequocbinh04/go-sdk/httpserver/middleware"
 	"github.com/lequocbinh04/go-sdk/logger"
@@ -91,11 +90,14 @@ func (gs *ginService) Configure() error {
 		}); err != nil {
 			return err
 		}
-		gs.router.Use(sentrygin.New(sentrygin.Options{
+
+		gs.router.Use(middleware.New(middleware.Options{
+			Repanic: false,
 			Timeout: time.Second * 2,
 		}))
+
 	} else {
-		gs.router.Use(middleware.WithoutSentry())
+		gs.router.Use(middleware.SentryRecover(false))
 	}
 
 	if !gs.GinNoDefault {
