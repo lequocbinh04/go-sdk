@@ -23,6 +23,14 @@ func InitServLogger(allowFileLogger bool) {
 	}
 }
 
+func InitServLoggerWithSentryDSN(allowFileLogger bool, dsn string) {
+	if allowFileLogger {
+		currentServLog = CustomMessageLoggerWithSentryDSN(dsn)
+	} else {
+		currentServLog = CustomStdLoggerWithSentryDSN(dsn)
+	}
+}
+
 func GetCurrent() ServiceLogger {
 	return currentServLog
 }

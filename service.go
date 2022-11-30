@@ -25,6 +25,7 @@ const (
 type service struct {
 	name         string
 	version      string
+	sentryDsn    string
 	env          string
 	opts         []Option
 	subServices  []Runnable
@@ -45,13 +46,17 @@ func New(opts ...Option) Service {
 		initServices: map[string]PrefixRunnable{},
 	}
 
-	// init default logger
-	logger.InitServLogger(false)
-	sv.logger = logger.GetCurrent().GetLogger("service")
-
 	for _, opt := range opts {
 		opt(sv)
 	}
+
+	// init default logger
+	if sv.sentryDsn != "" {
+		logger.InitServLoggerWithSentryDSN(false, sv.sentryDsn)
+	} else {
+		logger.InitServLogger(false)
+	}
+	sv.logger = logger.GetCurrent().GetLogger("service")
 
 	//// Http server
 	httpServer := httpserver.New(sv.name)
@@ -230,14 +235,18 @@ func (sv *service) parseFlags() {
 	sv.cmdLine.Parse([]string{})
 }
 
-// Service must have a name for service discovery and logging/monitoring
+// WithName Service must have a name for service discovery and logging/monitoring
 func WithName(name string) Option {
 	return func(s *service) { s.name = name }
 }
 
-// Every deployment needs a specific version
+// WithVersion Every deployment needs a specific version
 func WithVersion(version string) Option {
 	return func(s *service) { s.version = version }
+}
+
+func WithSentryDsn(dsn string) Option {
+	return func(s *service) { s.sentryDsn = dsn }
 }
 
 // Service will write log data to file with this option

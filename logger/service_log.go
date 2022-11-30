@@ -2,7 +2,9 @@ package logger
 
 import (
 	"flag"
+	"github.com/evalphobia/logrus_sentry"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/x-cray/logrus-prefixed-formatter"
@@ -15,9 +17,18 @@ var (
 	})
 )
 
+func CustomStdLoggerWithSentryDSN(dsn string) *stdLogger {
+	return NewAppLogService(&Config{
+		BasePrefix:   "core",
+		DefaultLevel: "trace",
+		SentryDSN:    dsn,
+	})
+}
+
 type Config struct {
 	DefaultLevel string
 	BasePrefix   string
+	SentryDSN    string
 }
 
 type ServiceLogger interface {
@@ -48,6 +59,20 @@ func NewAppLogService(config *Config) *stdLogger {
 		FullTimestamp:   true,
 		TimestampFormat: "15:04:05",
 	})
+
+	if config.SentryDSN != "" {
+
+		hook, err := logrus_sentry.NewSentryHook(config.SentryDSN, []logrus.Level{
+			logrus.PanicLevel,
+			logrus.FatalLevel,
+			logrus.ErrorLevel,
+		})
+		hook.Timeout = 2 * time.Second
+
+		if err == nil {
+			logger.Hooks.Add(hook)
+		}
+	}
 
 	return &stdLogger{
 		logger:   logger,
