@@ -29,7 +29,7 @@ func main() {
 			defer func() {
 				if err := recover(); err != nil {
 					fmt.Println("panic", err)
-					panic(err) // panic for sentry
+					panic(err) // panic for engine
 				}
 			}()
 			c.Next()
