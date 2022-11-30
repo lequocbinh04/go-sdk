@@ -59,7 +59,7 @@ func New(opts ...Option) Service {
 	sv.logger = logger.GetCurrent().GetLogger("service")
 
 	//// Http server
-	httpServer := httpserver.New(sv.name)
+	httpServer := httpserver.New(sv.name, sv.sentryDsn)
 	sv.httpServer = httpServer
 
 	sv.subServices = append(sv.subServices, httpServer)

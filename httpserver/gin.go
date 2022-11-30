@@ -4,14 +4,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-gonic/gin"
 	"github.com/lequocbinh04/go-sdk/httpserver/middleware"
 	"github.com/lequocbinh04/go-sdk/logger"
-	"github.com/gin-gonic/gin"
 	"go.opencensus.io/plugin/ochttp"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
@@ -36,6 +39,7 @@ type ginService struct {
 	Config
 	isEnabled bool
 	name      string
+	SentryDsn string
 	logger    logger.Logger
 	svr       *myHttpServer
 	router    *gin.Engine
@@ -45,11 +49,12 @@ type ginService struct {
 	//registryAgent registry.Agent
 }
 
-func New(name string) *ginService {
+func New(name, sentryDsn string) *ginService {
 	return &ginService{
-		name:     name,
-		mu:       &sync.Mutex{},
-		handlers: []func(*gin.Engine){},
+		name:      name,
+		SentryDsn: sentryDsn,
+		mu:        &sync.Mutex{},
+		handlers:  []func(*gin.Engine){},
 	}
 }
 
@@ -74,6 +79,25 @@ func (gs *ginService) Configure() error {
 
 	gs.logger.Debug("init gin engine...")
 	gs.router = gin.New()
+
+	if gs.SentryDsn != "" {
+		tracesSampleRate := 0.3
+		if gs.logger.GetLevel() == "trace" || gs.logger.GetLevel() == "debug" {
+			tracesSampleRate = 1.0
+		}
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              gs.SentryDsn,
+			TracesSampleRate: tracesSampleRate,
+		}); err != nil {
+			return err
+		}
+		gs.router.Use(sentrygin.New(sentrygin.Options{
+			Timeout: time.Second * 2,
+		}))
+	} else {
+		gs.router.Use(middleware.WithoutSentry())
+	}
+
 	if !gs.GinNoDefault {
 		if !ginNoLogger {
 			gs.router.Use(gin.Logger())

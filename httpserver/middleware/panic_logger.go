@@ -45,6 +45,7 @@ func RecoveryWithWriter(out io.Writer) gin.HandlerFunc {
 					)
 				}
 				//c.AbortWithStatus(http.StatusInternalServerError)
+				panic(err) // re-panic for sentry
 			}
 		}()
 		c.Next()
