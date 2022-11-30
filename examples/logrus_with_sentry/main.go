@@ -13,7 +13,7 @@ func main() {
 	service := goservice.New(
 		goservice.WithName("demo"),
 		goservice.WithVersion("1.0.0"),
-		goservice.WithSentryDsn("https://7c4fda062eac4dbca558c2e262ad649b@o4504246471950336.ingest.sentry.io/4504246473457664"),
+		goservice.WithSentryDsn(""),
 		goservice.WithInitRunnable(sckio.New("sckio")),
 	)
 	if err := service.Init(); err != nil {
