@@ -14,6 +14,7 @@ type observerProvider struct{}
 func (o *observerProvider) AddObservers(server *socketio.Server, sc goservice.ServiceContext, l logger.Logger) func(socketio.Conn) error {
 	return func(conn socketio.Conn) error {
 		l.Infoln("New connection", conn.ID(), ", IP:", conn.RemoteAddr())
+		sckio.NewAppSocket()
 		return nil
 	}
 }

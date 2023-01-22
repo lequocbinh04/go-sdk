@@ -12,7 +12,7 @@
 </div>
 
 <script>
-    var socket = io();
+    var socket = io("http://localhost:3000");
     var locTimer = null;
 
     socket.on('connect', () => {

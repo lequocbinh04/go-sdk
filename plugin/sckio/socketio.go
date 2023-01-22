@@ -67,6 +67,8 @@ func (s *sckServer) StartRealtimeServer(engine *gin.Engine, sc goservice.Service
 
 	engine.GET("/socket.io/*any", gin.WrapH(server))
 	engine.POST("/socket.io/*any", gin.WrapH(server))
+	engine.Handle("WS", "/socket.io/*any", gin.WrapH(server))
+	engine.Handle("WSS", "/socket.io/*any", gin.WrapH(server))
 }
 
 func (s *sckServer) UserSockets(userId int) []AppSocket {
