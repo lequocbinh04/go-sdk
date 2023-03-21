@@ -12,12 +12,12 @@ import (
 )
 
 type SocketServer interface {
-	UserSockets(userId int) []AppSocket
+	UserSockets(userId int64) []AppSocket
 	EmitToRoom(room string, key string, data interface{}) error
-	EmitToUser(userId int, key string, data interface{}) error
+	EmitToUser(userId int64, key string, data interface{}) error
 	StartRealtimeServer(engine *gin.Engine, sc goservice.ServiceContext, op ObserverProvider)
 	GetSocketServer() *socketio.Server
-	SaveAppSocket(userId int, appSck AppSocket)
+	SaveAppSocket(userId int64, appSck AppSocket)
 }
 
 type Config struct {
@@ -29,14 +29,14 @@ type sckServer struct {
 	Config
 	io      *socketio.Server
 	logger  logger.Logger
-	storage map[int][]AppSocket
+	storage map[int64][]AppSocket
 	locker  *sync.RWMutex
 }
 
 func New(name string) *sckServer {
 	return &sckServer{
 		Config:  Config{Name: name},
-		storage: make(map[int][]AppSocket),
+		storage: make(map[int64][]AppSocket),
 		locker:  new(sync.RWMutex),
 	}
 }
@@ -71,7 +71,7 @@ func (s *sckServer) StartRealtimeServer(engine *gin.Engine, sc goservice.Service
 	engine.Handle("WSS", "/socket.io/*any", gin.WrapH(server))
 }
 
-func (s *sckServer) UserSockets(userId int) []AppSocket {
+func (s *sckServer) UserSockets(userId int64) []AppSocket {
 	var sockets []AppSocket
 
 	if scks, ok := s.storage[userId]; ok {
@@ -86,7 +86,7 @@ func (s *sckServer) EmitToRoom(room string, key string, data interface{}) error 
 	return nil
 }
 
-func (s *sckServer) SaveAppSocket(userId int, appSck AppSocket) {
+func (s *sckServer) SaveAppSocket(userId int64, appSck AppSocket) {
 	s.locker.Lock()
 
 	//appSck.Join("order-{ordID}")
@@ -100,14 +100,14 @@ func (s *sckServer) SaveAppSocket(userId int, appSck AppSocket) {
 	s.locker.Unlock()
 }
 
-func (s *sckServer) getAppSocket(userId int) []AppSocket {
+func (s *sckServer) getAppSocket(userId int64) []AppSocket {
 	s.locker.RLock()
 	defer s.locker.RUnlock()
 
 	return s.storage[userId]
 }
 
-func (s *sckServer) EmitToUser(userId int, key string, data interface{}) error {
+func (s *sckServer) EmitToUser(userId int64, key string, data interface{}) error {
 	sockets := s.getAppSocket(userId)
 
 	for _, s := range sockets {
