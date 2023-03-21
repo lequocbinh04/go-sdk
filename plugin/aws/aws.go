@@ -9,19 +9,19 @@ package aws
 import (
 	"flag"
 	"fmt"
-	"github.com/lequocbinh04/go-sdk/logger"
-	"github.com/lequocbinh04/go-sdk/sdkcm"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	s32 "github.com/aws/aws-sdk-go/service/s3"
+	"github.com/lequocbinh04/go-sdk/logger"
+	"github.com/lequocbinh04/go-sdk/sdkcm"
 )
 
 var (
-	ErrS3ApiKeyMissing       = sdkcm.CustomError("ErrS3ApiKeyMissing", "AWS S3 API key is missing")
-	ErrS3ApiSecretKeyMissing = sdkcm.CustomError("ErrS3ApiSecretKeyMissing", "AWS S3 API secret key is missing")
-	ErrS3RegionMissing       = sdkcm.CustomError("ErrS3RegionMissing", "AWS S3 region is missing")
-	ErrS3BucketMissing       = sdkcm.CustomError("ErrS3ApiKeyMissing", "AWS S3 bucket is missing")
+	ErrS3ApiKeyMissing       = sdkcm.CustomError(400, nil, "ErrS3ApiKeyMissing", "AWS S3 API key is missing")
+	ErrS3ApiSecretKeyMissing = sdkcm.CustomError(400, nil, "ErrS3ApiSecretKeyMissing", "AWS S3 API secret key is missing")
+	ErrS3RegionMissing       = sdkcm.CustomError(400, nil, "ErrS3RegionMissing", "AWS S3 region is missing")
+	ErrS3BucketMissing       = sdkcm.CustomError(400, nil, "ErrS3ApiKeyMissing", "AWS S3 bucket is missing")
 )
 
 type s3 struct {
