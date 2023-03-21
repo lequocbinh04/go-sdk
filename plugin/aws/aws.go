@@ -40,6 +40,7 @@ type s3Config struct {
 	s3ApiSecret string
 	s3Region    string
 	s3Bucket    string
+	s3Endpoint  string
 }
 
 func New(prefix ...string) *s3 {
@@ -68,6 +69,7 @@ func (s *s3) InitFlags() {
 	flag.StringVar(&s.cfg.s3ApiSecret, fmt.Sprintf("%s-%s", s.GetPrefix(), "api-secret"), "", "S3 API secret key")
 	flag.StringVar(&s.cfg.s3Region, fmt.Sprintf("%s-%s", s.GetPrefix(), "region"), "", "S3 region")
 	flag.StringVar(&s.cfg.s3Bucket, fmt.Sprintf("%s-%s", s.GetPrefix(), "bucket"), "", "S3 bucket")
+	flag.StringVar(&s.cfg.s3Endpoint, fmt.Sprintf("%s-%s", s.GetPrefix(), "endpoint"), "", "S3 endpoint")
 }
 
 func (s *s3) Configure() error {
@@ -86,6 +88,9 @@ func (s *s3) Configure() error {
 	}
 
 	config := aws.NewConfig().WithRegion(s.cfg.s3Region).WithCredentials(credential)
+	if s.cfg.s3Endpoint != "" {
+		config.WithEndpoint(s.cfg.s3Endpoint)
+	}
 	ss, err := session.NewSession(config)
 	service := s32.New(ss, config)
 

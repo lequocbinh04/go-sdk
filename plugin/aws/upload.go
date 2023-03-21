@@ -59,6 +59,7 @@ func (s *s3) UploadFileData(ctx context.Context, fileData []byte, fileName strin
 	params := &s32.PutObjectInput{
 		Bucket:        aws.String(s.cfg.s3Bucket),
 		Key:           aws.String(fileKey),
+		ACL:           aws.String(s32.ObjectCannedACLPublicRead),
 		Body:          fileBytes,
 		ContentLength: aws.Int64(int64(len(fileData))),
 		ContentType:   aws.String(fileType),
