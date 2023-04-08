@@ -9,11 +9,14 @@ package sdkgorm
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/lequocbinh04/go-sdk/logger"
 	"github.com/lequocbinh04/go-sdk/plugin/storage/sdkgorm/gormdialects"
 	"gorm.io/gorm"
+	glogger "gorm.io/gorm/logger"
 	"strings"
 	"sync"
+	"time"
 )
 
 type GormDBType int
@@ -29,10 +32,13 @@ const (
 const retryCount = 10
 
 type GormOpt struct {
-	Uri          string
-	Prefix       string
-	DBType       string
-	PingInterval int // in seconds
+	Uri                   string
+	Prefix                string
+	DBType                string
+	PingInterval          int // in seconds
+	MaxOpenConnections    int
+	MaxIdleConnections    int
+	MaxConnectionIdleTime int
 }
 
 type gormDB struct {
@@ -70,8 +76,28 @@ func (gdb *gormDB) InitFlags() {
 	}
 
 	flag.StringVar(&gdb.Uri, prefix+"gorm-db-uri", "", "Gorm database connection-string.")
-	flag.StringVar(&gdb.DBType, prefix+"gorm-db-type", "", "Gorm database type (mysql, postgres, sqlite, mssql)")
+	flag.StringVar(&gdb.DBType, prefix+"gorm-db-type", "mysql", "Gorm database type (mysql, postgres, sqlite, mssql)")
 	flag.IntVar(&gdb.PingInterval, prefix+"gorm-db-ping-interval", 5, "Gorm database ping check interval")
+	flag.IntVar(
+		&gdb.MaxOpenConnections,
+		fmt.Sprintf("%sdb-max-conn", prefix),
+		50,
+		"maximum number of open connections to the database - Default 50",
+	)
+
+	flag.IntVar(
+		&gdb.MaxIdleConnections,
+		fmt.Sprintf("%sdb-max-ide-conn", prefix),
+		15,
+		"maximum number of database connections in the idle - Default 10",
+	)
+
+	flag.IntVar(
+		&gdb.MaxConnectionIdleTime,
+		fmt.Sprintf("%sdb-max-conn-ide-time", prefix),
+		3600,
+		"maximum amount of time a connection may be idle in seconds - Default 3600",
+	)
 }
 
 func (gdb *gormDB) isDisabled() bool {
@@ -122,7 +148,13 @@ func (gdb *gormDB) Get() interface{} {
 	if gdb.logger.GetLevel() == "debug" || gdb.logger.GetLevel() == "trace" {
 		return gdb.db.Session(&gorm.Session{NewDB: true}).Debug()
 	}
-	return gdb.db.Session(&gorm.Session{NewDB: true})
+	newSessionDB := gdb.db.Session(&gorm.Session{NewDB: true, Logger: gdb.db.Logger.LogMode(glogger.Silent)})
+	if db, err := newSessionDB.DB(); err == nil {
+		db.SetMaxOpenConns(gdb.MaxOpenConnections)
+		db.SetMaxIdleConns(gdb.MaxIdleConnections)
+		db.SetConnMaxIdleTime(time.Second * time.Duration(gdb.MaxConnectionIdleTime))
+	}
+	return newSessionDB
 }
 
 func getDBType(dbType string) GormDBType {

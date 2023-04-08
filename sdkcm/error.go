@@ -13,6 +13,7 @@ type AppError struct {
 	Message    string `json:"message"`
 	Log        string `json:"log"`
 	Key        string `json:"error_key"`
+	TraceID    string `json:"trace_id,omitempty"`
 }
 
 func NewErrorResponse(statusCode int, root error, msg, log, key string) *AppError {
