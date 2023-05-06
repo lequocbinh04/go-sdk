@@ -118,6 +118,7 @@ func (sv *service) Init() error {
 
 func (sv *service) InitPrefix(prefix ...string) error {
 	for _, pre := range prefix {
+		sv.initServices[pre].InitFlags()
 		if err := sv.initServices[pre].Run(); err != nil {
 			return err
 		}
