@@ -3,6 +3,7 @@ package logger
 import (
 	"flag"
 	"github.com/evalphobia/logrus_sentry"
+	"os"
 	"strings"
 	"time"
 
@@ -101,7 +102,11 @@ func (s *stdLogger) GetLogger(prefix string) Logger {
 // Implement Runnable interface
 func (s *stdLogger) Name() string { return "file-logger" }
 func (s *stdLogger) InitFlags() {
-	flag.StringVar(&s.logLevel, "log-level", s.cfg.DefaultLevel, "Log level: panic | fatal | error | warn | info | debug | trace")
+	if os.Getenv("LOG_LEVEL") != "" {
+		s.logLevel = os.Getenv("LOG_LEVEL")
+	} else {
+		flag.StringVar(&s.logLevel, "log-level", s.cfg.DefaultLevel, "Log level: panic | fatal | error | warn | info | debug | trace")
+	}
 }
 func (s *stdLogger) Configure() error {
 	lv := mustParseLevel(s.logLevel)
