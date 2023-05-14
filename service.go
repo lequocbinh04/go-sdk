@@ -46,10 +46,6 @@ func New(opts ...Option) Service {
 		initServices: map[string]PrefixRunnable{},
 	}
 
-	for _, opt := range opts {
-		opt(sv)
-	}
-
 	// init default logger
 	if sv.sentryDsn != "" {
 		logger.InitServLoggerWithSentryDSN(false, sv.sentryDsn)
@@ -57,6 +53,10 @@ func New(opts ...Option) Service {
 		logger.InitServLogger(false)
 	}
 	sv.logger = logger.GetCurrent().GetLogger("service")
+
+	for _, opt := range opts {
+		opt(sv)
+	}
 
 	//// Http server
 	httpServer := httpserver.New(sv.name, sv.sentryDsn)
