@@ -130,7 +130,7 @@ func (sv *service) IsRegistered() bool {
 	return sv.isRegister
 }
 
-func (sv *service) Start() error {
+func (sv *service) Start(exitCallback func()) error {
 	signal.Notify(sv.signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	c := sv.run()
 	//s.stopFunc = s.activeRegistry()
@@ -151,6 +151,9 @@ func (sv *service) Start() error {
 				return nil
 			default:
 				sv.Stop()
+				if exitCallback != nil {
+					exitCallback()
+				}
 				return nil
 			}
 		}

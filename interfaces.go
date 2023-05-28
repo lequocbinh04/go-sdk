@@ -52,7 +52,7 @@ type Service interface {
 	IsRegistered() bool
 	// Start service and its all component.
 	// It will be stopped if any service return error
-	Start() error
+	Start(exitCallback func()) error
 	// Stop service and its all component.
 	Stop()
 	// Method export all flags to std/terminal
