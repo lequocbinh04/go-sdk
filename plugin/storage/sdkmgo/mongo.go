@@ -7,13 +7,14 @@
 package sdkmgo
 
 import (
+	"context"
 	"flag"
 	"github.com/lequocbinh04/go-sdk/logger"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"math"
 	"sync"
 	"time"
-
-	"github.com/globalsign/mgo"
 )
 
 var (
@@ -32,7 +33,7 @@ type MongoDBOpt struct {
 type mongoDB struct {
 	name      string
 	logger    logger.Logger
-	session   *mgo.Session
+	session   *mongo.Client
 	isRunning bool
 	once      *sync.Once
 	*MongoDBOpt
@@ -99,7 +100,7 @@ func (mgDB *mongoDB) Cleanup() {
 	}
 
 	if mgDB.session != nil {
-		mgDB.session.Close()
+		mgDB.session.Disconnect(context.Background())
 	}
 }
 
@@ -109,7 +110,7 @@ func (mgDB *mongoDB) Run() error {
 
 func (mgDB *mongoDB) Stop() <-chan bool {
 	if mgDB.session != nil {
-		mgDB.session.Close()
+		mgDB.session.Disconnect(context.Background())
 	}
 	mgDB.isRunning = false
 
@@ -133,18 +134,17 @@ func (mgDB *mongoDB) Get() interface{} {
 	if mgDB.session == nil {
 		return nil
 	}
-	return mgDB.session.New()
+	return mgDB.session
 }
 
-func (mgDB *mongoDB) getConnWithRetry(retryCount int) (*mgo.Session, error) {
-	db, err := mgo.Dial(mgDB.MgoUri)
+func (mgDB *mongoDB) getConnWithRetry(retryCount int) (*mongo.Client, error) {
+	db, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mgDB.MgoUri))
 
 	if err != nil {
 		for {
 			time.Sleep(time.Second * 1)
 			mgDB.logger.Errorf("Retry to connect %s.\n", mgDB.name)
-			db, err = mgo.Dial(mgDB.MgoUri)
-
+			db, err = mongo.Connect(context.Background(), options.Client().ApplyURI(mgDB.MgoUri))
 			if err == nil {
 				go mgDB.reconnectIfNeeded()
 				break
@@ -160,13 +160,13 @@ func (mgDB *mongoDB) getConnWithRetry(retryCount int) (*mgo.Session, error) {
 func (mgDB *mongoDB) reconnectIfNeeded() {
 	conn := mgDB.session
 	for {
-		if err := conn.Ping(); err != nil {
-			conn.Close()
+		if err := conn.Ping(context.Background(), nil); err != nil {
+			conn.Disconnect(context.Background())
 			mgDB.logger.Errorf("%s connection is gone, try to reconnect\n", mgDB.name)
 			mgDB.isRunning = false
 			mgDB.once = new(sync.Once)
 
-			mgDB.Get().(*mgo.Session).Close()
+			mgDB.Get().(*mongo.Client).Disconnect(context.Background())
 			return
 		}
 		time.Sleep(time.Second * time.Duration(mgDB.PingInterval))
