@@ -7,7 +7,9 @@ require (
 	github.com/NaySoftware/go-fcm v0.0.0-20190516140123-808e978ddcd2
 	github.com/aws/aws-sdk-go v1.44.91
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/evalphobia/logrus_sentry v0.8.2
 	github.com/facebookgo/flagenv v0.0.0-20160425205200-fcd59fca7456
+	github.com/getsentry/sentry-go v0.15.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-redis/redis/v7 v7.4.1
@@ -19,6 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	go.mongodb.org/mongo-driver v1.11.7
 	go.opencensus.io v0.20.1
 	golang.org/x/oauth2 v0.0.0-20220808172628-8227340efae7
 	gorm.io/driver/mysql v1.3.6
@@ -34,12 +37,10 @@ require (
 	github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.12.0 // indirect
-	github.com/evalphobia/logrus_sentry v0.8.2 // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
 	github.com/getsentry/raven-go v0.2.0 // indirect
-	github.com/getsentry/sentry-go v0.15.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -86,7 +87,6 @@ require (
 	github.com/xdg-go/scram v1.1.1 // indirect
 	github.com/xdg-go/stringprep v1.0.3 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
-	go.mongodb.org/mongo-driver v1.11.7 // indirect
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be // indirect
 	golang.org/x/net v0.0.0-20221002022538-bcab6841153b // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect

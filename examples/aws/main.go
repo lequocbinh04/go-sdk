@@ -5,7 +5,6 @@ import (
 	"fmt"
 	goservice "github.com/lequocbinh04/go-sdk"
 	"github.com/lequocbinh04/go-sdk/plugin/aws"
-	"log"
 )
 
 func main() {
@@ -15,19 +14,12 @@ func main() {
 		goservice.WithInitRunnable(aws.New("aws")),
 	)
 	_ = service.Init()
-	logoFile := "logo.png" // put this file on project root to test
 
 	s3 := service.MustGet("aws").(aws.S3)
-	url, err := s3.Upload(context.Background(), logoFile, "media")
+	url, err := s3.ListImageWithPaging(context.Background(), "image/space/64c2457721ce22a8d87865dc")
+
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
-
-	urls := []string{"media/1572142633410254000.png", "media/1572143325272547000.png"} // put fileKey need remove into array
-
-	if err := s3.DeleteImages(context.Background(), urls); err != nil {
-		log.Fatalln(err)
-	}
-
 	fmt.Println(url)
 }

@@ -15,4 +15,5 @@ type S3 interface {
 	DeleteImages(ctx context.Context, fileKeys []string) error
 	// Delete any object
 	DeleteObject(ctx context.Context, key string) error
+	ListImageWithPaging(ctx context.Context, prefixPath string) ([]string, error)
 }
